@@ -44,6 +44,13 @@ fn serialize_duration_seconds<S: Serializer>(
 }
 
 #[derive(Deserialize, Serialize, Default, Debug)]
+pub struct LastFMConfig {
+    pub url: Option<String>,
+    pub key: String,
+    pub secret: String,
+}
+
+#[derive(Deserialize, Serialize, Default, Debug)]
 pub struct ListenBrainzConfig {
     pub url: Option<String>,
     pub token: String,
@@ -74,6 +81,8 @@ pub struct Config {
 
     pub filter_script: Option<PathBuf>,
 
+    pub lastfm: Option<Vec<LastFMConfig>>,
+
     pub listenbrainz: Option<Vec<ListenBrainzConfig>>,
 }
 
@@ -87,6 +96,11 @@ impl Config {
             min_play_time: Some(Duration::from_secs(0)),
             player_whitelist: Some(HashSet::new()),
             filter_script: Some(PathBuf::new()),
+            lastfm: Some(vec![LastFMConfig {
+                url: Some(String::new()),
+                key: String::new(),
+                secret: String::new(),
+            }]),
             listenbrainz: Some(vec![ListenBrainzConfig {
                 url: Some(String::new()),
                 token: String::new(),
@@ -100,6 +114,22 @@ impl Config {
     }
 
     fn normalize(&mut self) {
+        // Turn `lastfm-key` and `lastfm-token` into a `[[lastfm]]` definition
+        if self.lastfm_key.is_some() && self.lastfm_secret.is_some() {
+            if self.lastfm.is_none() {
+                self.lastfm = Some(vec![LastFMConfig {
+                    url: None,
+                    key: self.lastfm_key.take().unwrap(),
+                    secret: self.lastfm_secret.take().unwrap(),
+                }])
+            } else {
+                eprintln!("Warning: both lastfm-key/lastfm-secret and [[lastfm]] config options are defined (the former will be ignored)");
+            }
+
+            self.lastfm_key.take();
+            self.lastfm_secret.take();
+        }
+
         // Turn `listenbrainz-token` into a `[[listenbrainz]]` definition
         if self.listenbrainz_token.is_some() {
             if self.listenbrainz.is_none() {
@@ -108,7 +138,7 @@ impl Config {
                     token: self.listenbrainz_token.take().unwrap(),
                 }])
             } else {
-                eprintln!("Warning: both listenbrainz-token and [[listenbrainz]] config options are defined (listenbrainz-token will be ignored)");
+                eprintln!("Warning: both listenbrainz-token and [[listenbrainz]] config options are defined (the former will be ignored)");
             }
 
             self.listenbrainz_token.take();
@@ -163,8 +193,56 @@ mod tests {
         let mut config = Config::default();
         config.normalize();
 
+        assert!(config.lastfm_key.is_none());
+        assert!(config.lastfm_secret.is_none());
+        assert!(config.lastfm.is_none());
+
         assert!(config.listenbrainz_token.is_none());
         assert!(config.listenbrainz.is_none());
+    }
+
+    #[test]
+    fn test_normalize_lastfm_key_secret() {
+        let mut config = Config::default();
+        config.lastfm_key = Some("TEST KEY".to_string());
+        config.lastfm_secret = Some("TEST SECRET".to_string());
+        config.normalize();
+
+        assert!(config.lastfm_key.is_none());
+        assert!(config.lastfm_secret.is_none());
+        assert!(matches!(
+            &config.lastfm.unwrap()[..],
+            [LastFMConfig { url: None, key, secret }] if key == "TEST KEY" && secret == "TEST SECRET"
+        ));
+    }
+
+    #[test]
+    fn test_normalize_lastfm_double() {
+        let mut config = Config::default();
+        config.lastfm_key = Some("TEST KEY".to_string());
+        config.lastfm_secret = Some("TEST SECRET".to_string());
+        config.lastfm = Some(vec![LastFMConfig {
+            url: None,
+            key: "SECOND TEST KEY".to_string(),
+            secret: "SECOND TEST SECRET".to_string(),
+        }]);
+        config.normalize();
+
+        assert!(config.lastfm_key.is_none());
+        assert!(config.lastfm_secret.is_none());
+        assert!(config.lastfm.is_some());
+    }
+
+    #[test]
+    fn test_normalize_lastfm_incomplete() {
+        let mut config = Config::default();
+        config.lastfm_key = Some("TEST KEY".to_string());
+        config.lastfm_secret = None;
+        config.normalize();
+
+        assert!(config.lastfm_key.is_some());
+        assert!(config.lastfm_secret.is_none());
+        assert!(config.lastfm.is_none());
     }
 
     #[test]
