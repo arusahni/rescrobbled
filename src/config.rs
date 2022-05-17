@@ -74,6 +74,8 @@ pub struct Config {
 
     pub filter_script: Option<PathBuf>,
 
+    pub cache_scrobbles: Option<bool>,
+
     pub listenbrainz: Option<Vec<ListenBrainzConfig>>,
 }
 
@@ -87,6 +89,7 @@ impl Config {
             min_play_time: Some(Duration::from_secs(0)),
             player_whitelist: Some(HashSet::new()),
             filter_script: Some(PathBuf::new()),
+            cache_scrobbles: Some(false),
             listenbrainz: Some(vec![ListenBrainzConfig {
                 url: Some(String::new()),
                 token: String::new(),
