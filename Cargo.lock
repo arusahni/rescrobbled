@@ -164,6 +164,8 @@ dependencies = [
  "log",
  "native-tls",
  "openssl",
+ "serde",
+ "serde_urlencoded",
  "url",
  "wildmatch 2.1.0",
 ]
@@ -1202,7 +1204,7 @@ checksum = "7ef03e0a2b150c7a90d01faf6254c9c48a41e95fb2a8c2ac1c6f0d2b9aefc342"
 [[package]]
 name = "rustfm-scrobble"
 version = "1.1.1"
-source = "git+https://github.com/InputUsername/rustfm-scrobble.git?branch=use-attohttpc#0eca190f4535c76a1c234077fb506167a1998bdc"
+source = "git+https://github.com/InputUsername/rustfm-scrobble.git?branch=use-attohttpc#303167d88d2c2d6b8e0e9bf3e62641be5e523828"
 dependencies = [
  "attohttpc 0.19.1",
  "md5",
@@ -1290,6 +1292,18 @@ dependencies = [
  "proc-macro2 1.0.36",
  "quote 1.0.15",
  "syn 1.0.86",
+]
+
+[[package]]
+name = "serde_urlencoded"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d3491c14715ca2294c4d6a88f15e84739788c1d030eed8c110436aafdaa2f3fd"
+dependencies = [
+ "form_urlencoded",
+ "itoa",
+ "ryu",
+ "serde",
 ]
 
 [[package]]
